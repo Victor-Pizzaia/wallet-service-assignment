@@ -1,0 +1,16 @@
+services:
+  postgres:
+    image: 'postgres:16'
+    container_name: wallet_service_database
+    restart: always
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_DB: wallet_service_assignment
+      POSTGRES_USER: root
+      POSTGRES_PASSWORD: pizzaDeBatata
+#     volumes:
+#       - postgres_data:/var/lib/postgresql/data
+
+# volumes:
+#   postgres_data:
