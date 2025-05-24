@@ -1,9 +1,9 @@
-package br.com.victorpizzaia.wallet_service_assignment.user.application.service.impl;
+package br.com.victorpizzaia.wallet_service_assignment.auth.application.service.impl;
 
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import br.com.victorpizzaia.wallet_service_assignment.user.application.service.PasswordEncoderService;
+import br.com.victorpizzaia.wallet_service_assignment.auth.application.service.PasswordEncoderService;
 
 @Service
 public class PasswordEncoderServiceImpl implements PasswordEncoderService {
@@ -21,8 +21,7 @@ public class PasswordEncoderServiceImpl implements PasswordEncoderService {
 
     @Override
     public boolean matches(String plainPassword, String hashedPassword) {
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'matches'");
+        return encoder.matches(plainPassword, hashedPassword);
     }
     
 }

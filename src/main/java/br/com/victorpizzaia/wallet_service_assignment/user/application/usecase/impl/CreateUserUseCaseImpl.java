@@ -4,10 +4,10 @@ import java.util.Optional;
 
 import org.springframework.context.ApplicationEventPublisher;
 
+import br.com.victorpizzaia.wallet_service_assignment.auth.application.service.PasswordEncoderService;
 import br.com.victorpizzaia.wallet_service_assignment.shared.application.UseCase;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.UserCreatedEvent;
-import br.com.victorpizzaia.wallet_service_assignment.user.application.service.PasswordEncoderService;
 import br.com.victorpizzaia.wallet_service_assignment.user.application.usecase.CreateUserUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.user.infrastructure.persistence.User;
 import br.com.victorpizzaia.wallet_service_assignment.user.infrastructure.persistence.UserRepository;

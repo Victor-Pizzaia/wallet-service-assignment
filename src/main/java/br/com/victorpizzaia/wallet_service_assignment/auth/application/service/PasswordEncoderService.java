@@ -1,4 +1,4 @@
-package br.com.victorpizzaia.wallet_service_assignment.user.application.service;
+package br.com.victorpizzaia.wallet_service_assignment.auth.application.service;
 
 public interface PasswordEncoderService {
     String hash(String plainPassword);

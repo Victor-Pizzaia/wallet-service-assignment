@@ -2,24 +2,24 @@ package br.com.victorpizzaia.wallet_service_assignment.infrastructure;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
-        http
+    public SecurityFilterChain securityFilterChain(HttpSecurity http, JwtAuthFilter jwtAuthFilter) throws Exception {
+        return http
           .csrf(csrf -> csrf.disable())
           .authorizeHttpRequests(auth -> auth
-              .requestMatchers(HttpMethod.POST, "/wallets/**").permitAll()
+              .requestMatchers("/auth/**", "/wallets/**").permitAll()
               .anyRequest().authenticated()
-            );
-
-        return http.build();
+          )
+          .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
+          .build();
     }
 }
