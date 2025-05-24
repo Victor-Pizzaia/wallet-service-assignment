@@ -13,4 +13,8 @@ public record UserId(UUID id) {
     public UserId() {
         this(UUID.randomUUID());
     }
+
+    public UserId(String id) {
+        this(UUID.fromString(id));
+    }
 }
