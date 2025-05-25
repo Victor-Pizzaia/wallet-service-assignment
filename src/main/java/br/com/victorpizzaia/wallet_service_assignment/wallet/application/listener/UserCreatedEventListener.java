@@ -4,24 +4,20 @@ import org.springframework.modulith.events.ApplicationModuleListener;
 import org.springframework.stereotype.Component;
 
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.UserCreatedEvent;
-import br.com.victorpizzaia.wallet_service_assignment.wallet.infrastructure.persistence.Wallet;
-import br.com.victorpizzaia.wallet_service_assignment.wallet.infrastructure.persistence.WalletRepository;
-import jakarta.transaction.Transactional;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.application.service.WalletService;
 
 @Component
 public class UserCreatedEventListener {
 
-    private final WalletRepository walletRepository;
+    private final WalletService walletService;
 
-    public UserCreatedEventListener(WalletRepository walletRepository) {
-        this.walletRepository = walletRepository;
+    public UserCreatedEventListener(WalletService walletService) {
+        this.walletService = walletService;
     }
 
-    @Transactional
     @ApplicationModuleListener
     public void onUserCreated(UserCreatedEvent event) {
-        Wallet newWallet = new Wallet(event.userId());
-        walletRepository.save(newWallet);
+        walletService.createWallet(event.userId());
     }
     
 }

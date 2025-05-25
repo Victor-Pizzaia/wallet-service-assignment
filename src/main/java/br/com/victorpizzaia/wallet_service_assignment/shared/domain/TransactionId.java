@@ -4,17 +4,16 @@ import java.util.UUID;
 
 import org.springframework.util.Assert;
 
-public record WalletId(UUID id) {
-
-    public WalletId {
+public record TransactionId(UUID id) {
+    public TransactionId {
         Assert.notNull(id, "Id must not be null");
     }
 
-    public WalletId() {
+    public TransactionId() {
         this(UUID.randomUUID());
     }
 
-    public WalletId(String id) {
+    public TransactionId(String id) {
         this(UUID.fromString(id));
     }
 }

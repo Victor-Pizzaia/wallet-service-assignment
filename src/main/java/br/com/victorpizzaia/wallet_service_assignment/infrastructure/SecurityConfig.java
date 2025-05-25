@@ -16,7 +16,8 @@ public class SecurityConfig {
         return http
           .csrf(csrf -> csrf.disable())
           .authorizeHttpRequests(auth -> auth
-              .requestMatchers("/auth/**", "/wallets/**").permitAll()
+              .requestMatchers("/auth", "/auth/**").permitAll()
+              .requestMatchers("/wallets").permitAll()
               .anyRequest().authenticated()
           )
           .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)
