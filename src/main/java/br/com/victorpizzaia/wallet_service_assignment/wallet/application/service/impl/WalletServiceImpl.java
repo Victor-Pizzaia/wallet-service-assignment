@@ -11,6 +11,7 @@ import br.com.victorpizzaia.wallet_service_assignment.shared.domain.TransactionI
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.WalletId;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.TransactionUpdateStatusEvent;
+import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.WalletUpdatedEvent;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.service.WalletService;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.infrastructure.persistence.Wallet;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.infrastructure.persistence.WalletRepository;
@@ -19,13 +20,15 @@ import br.com.victorpizzaia.wallet_service_assignment.wallet.infrastructure.pers
 public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
-    private final ApplicationEventPublisher statusUpdater;
+    private final ApplicationEventPublisher eventPublisher;
     private static final String FAILED_STATUS = "FAILED";
     private static final String COMPLETED_STATUS = "COMPLETED";
+    private static final String DEPOSIT = "DEPOSIT";
+    private static final String WITHDRAW = "WITHDRAW";
 
-    public WalletServiceImpl(WalletRepository walletRepository, ApplicationEventPublisher statusUpdater) {
+    public WalletServiceImpl(WalletRepository walletRepository, ApplicationEventPublisher eventPublisher) {
         this.walletRepository = walletRepository;
-        this.statusUpdater = statusUpdater;
+        this.eventPublisher = eventPublisher;
     }
 
     @Override
@@ -49,6 +52,7 @@ public class WalletServiceImpl implements WalletService {
 
         wallet.deposit(amount);
         walletRepository.save(wallet);
+        publishWalletUpdateEvent(userId, wallet.getId(), wallet.getBalance(), amount, DEPOSIT);
     }
 
     @Override
@@ -59,6 +63,7 @@ public class WalletServiceImpl implements WalletService {
 
         wallet.withdraw(amount);
         walletRepository.save(wallet);
+        publishWalletUpdateEvent(userId, wallet.getId(), wallet.getBalance(), amount, WITHDRAW);
     }
 
     @Override
@@ -85,6 +90,8 @@ public class WalletServiceImpl implements WalletService {
 
             walletRepository.saveAll(List.of(payerWallet, payeeWallet));
 
+            publishWalletUpdateEvent(userId, payerWallet.getId(), payerWallet.getBalance(), amount, WITHDRAW);
+            publishWalletUpdateEvent(payeeWallet.getUserId(), payeeWallet.getId(), payeeWallet.getBalance(), amount, DEPOSIT);
             publishTransactionEvent(transactionId, COMPLETED_STATUS, "Transfer successful");
         } catch (Exception e) {
             publishTransactionEvent(transactionId, FAILED_STATUS, "Unexpected error");
@@ -92,6 +99,10 @@ public class WalletServiceImpl implements WalletService {
     }
 
     private void publishTransactionEvent(TransactionId transactionId, String status, String message) {
-        statusUpdater.publishEvent(new TransactionUpdateStatusEvent(transactionId, status, message));
+        eventPublisher.publishEvent(new TransactionUpdateStatusEvent(transactionId, status, message));
+    }
+
+    private void publishWalletUpdateEvent(UserId userId, WalletId walletId, BigDecimal balance, BigDecimal amount, String transactionType) {
+        eventPublisher.publishEvent(new WalletUpdatedEvent(userId, walletId, balance, amount, transactionType));
     }
 }
