@@ -7,6 +7,8 @@ import br.com.victorpizzaia.wallet_service_assignment.auth.application.service.P
 import br.com.victorpizzaia.wallet_service_assignment.auth.domain.JwtProvider;
 import br.com.victorpizzaia.wallet_service_assignment.auth.domain.LoginRequest;
 import br.com.victorpizzaia.wallet_service_assignment.auth.domain.LoginResponse;
+import br.com.victorpizzaia.wallet_service_assignment.auth.domain.exception.UserNotFound;
+import br.com.victorpizzaia.wallet_service_assignment.auth.domain.exception.UserPasswordWrongException;
 import br.com.victorpizzaia.wallet_service_assignment.user.application.service.UserQueryService;
 import br.com.victorpizzaia.wallet_service_assignment.user.application.view.UserCredentialsView;
 
@@ -25,10 +27,10 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
         UserCredentialsView user = userQueryService.findByEmailOrCpf(loginRequest.identifier())
-            .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+            .orElseThrow(() -> new UserNotFound("User not found"));
 
         if (!passwordEncoderService.matches(loginRequest.password(), user.getHashedPassword())) {
-            throw new RuntimeException("Senha inválida");
+            throw new UserPasswordWrongException("Wrong password");
         }
 
         String token = jwtProvider.generateToken(user.getUserId().toString(), loginRequest.identifier());

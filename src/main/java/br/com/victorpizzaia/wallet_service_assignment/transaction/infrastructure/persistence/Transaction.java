@@ -59,7 +59,7 @@ public class Transaction {
 
     public Transaction(TransactionId id, WalletId payerId, WalletId payeeId, @PositiveAmount BigDecimal amount) {
         if (payerId.equals(payeeId)) {
-            throw new IllegalArgumentException("Não é possível transferir para a mesma carteira");
+            throw new IllegalArgumentException("Payer and payee cannot be the same wallet");
         }
 
         this.id = id;
