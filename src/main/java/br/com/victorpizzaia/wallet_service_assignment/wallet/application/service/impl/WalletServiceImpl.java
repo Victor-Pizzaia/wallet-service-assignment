@@ -34,4 +34,14 @@ public class WalletServiceImpl implements WalletService {
         wallet.deposit(amount);
         walletRepository.save(wallet);
     }
+
+    @Override
+    @Transactional
+    public void withdraw(UserId userId, BigDecimal amount) {
+        Wallet wallet = walletRepository.findByUserId(userId)
+            .orElseThrow(() -> new IllegalArgumentException("Wallet not found for user: " + userId));
+
+        wallet.withdraw(amount);
+        walletRepository.save(wallet);
+    }
 }

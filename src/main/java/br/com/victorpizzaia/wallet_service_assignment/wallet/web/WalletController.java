@@ -13,9 +13,10 @@ import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
 import br.com.victorpizzaia.wallet_service_assignment.user.application.usecase.CreateUserUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.DepositUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.GetActualBalanceUseCase;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.WithdrawUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.BalanceResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.CreateWalletRequest;
-import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.DepositRequest;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletAmountRequest;
 import jakarta.validation.Valid;
 
 @RestController
@@ -26,14 +27,17 @@ public class WalletController {
     private final CreateUserUseCase createUserUseCase;
     private final GetActualBalanceUseCase getActualBalanceUseCase;
     private final DepositUseCase depositUseCase;
+    private final WithdrawUseCase withdrawUseCase;
 
     public WalletController(
         CreateUserUseCase createUserUseCase,
         GetActualBalanceUseCase getActualBalanceUseCase,
-        DepositUseCase depositUseCase) {
+        DepositUseCase depositUseCase,
+        WithdrawUseCase withdrawUseCase) {
         this.createUserUseCase = createUserUseCase;
         this.getActualBalanceUseCase = getActualBalanceUseCase;
         this.depositUseCase = depositUseCase;
+        this.withdrawUseCase = withdrawUseCase;
     }
 
     @PostMapping
@@ -52,9 +56,16 @@ public class WalletController {
     }
 
     @PostMapping("/deposit")
-    public ResponseEntity<Void> deposit(Authentication authentication, @Valid @RequestBody DepositRequest depositRequest) {
+    public ResponseEntity<Void> deposit(Authentication authentication, @Valid @RequestBody WalletAmountRequest depositRequest) {
         String userId = authentication.getName();
         depositUseCase.deposit(new UserId(userId), depositRequest.amount());
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/withdraw")
+    public ResponseEntity<Void> withdraw(Authentication authentication, @Valid @RequestBody WalletAmountRequest withdrawRequest) {
+        String userId = authentication.getName();
+        withdrawUseCase.withdraw(new UserId(userId), withdrawRequest.amount());
         return ResponseEntity.ok().build();
     }
 }
