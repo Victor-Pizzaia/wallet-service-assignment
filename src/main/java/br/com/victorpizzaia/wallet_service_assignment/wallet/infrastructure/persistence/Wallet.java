@@ -51,4 +51,11 @@ public class Wallet {
         this.balance = BigDecimal.ZERO;
         this.userId = userId;
     }
+
+    public void deposit(BigDecimal amount) {
+        if (amount == null || amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("Deposit amount must be greater than zero.");
+        }
+        this.balance = this.balance.add(amount);
+    }
 }

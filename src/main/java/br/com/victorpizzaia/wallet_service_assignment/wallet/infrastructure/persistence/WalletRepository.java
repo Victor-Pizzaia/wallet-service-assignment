@@ -16,4 +16,6 @@ public interface WalletRepository extends JpaRepository<Wallet, WalletId> {
 
     @Query("SELECT w.balance FROM Wallet w WHERE w.userId = :userId")
     Optional<BigDecimal> findBalanceByUserId(@Param("userId") UserId userId);
+
+    Optional<Wallet> findByUserId(UserId userId);
 }
