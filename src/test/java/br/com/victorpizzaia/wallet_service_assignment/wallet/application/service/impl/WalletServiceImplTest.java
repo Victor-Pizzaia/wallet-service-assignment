@@ -135,104 +135,97 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void transfer_shouldTransferAndPublishEvents() {
-        TransactionId transactionId = new TransactionId(UUID.randomUUID());
-        UserId userId = new UserId(UUID.randomUUID());
-        WalletId payerId = new WalletId(UUID.randomUUID());
-        WalletId payeeId = new WalletId(UUID.randomUUID());
+    void transaction_shouldTransferFundsAndPublishEvents() {
+        UserId payerId = new UserId(UUID.randomUUID());
+        UserId payeeUserId = new UserId(UUID.randomUUID());
+        String payeeKey = "payee-key";
         BigDecimal amount = new BigDecimal("30.00");
 
         Wallet payerWallet = mock(Wallet.class);
         Wallet payeeWallet = mock(Wallet.class);
+        WalletId payerWalletId = new WalletId(UUID.randomUUID());
+        WalletId payeeWalletId = new WalletId(UUID.randomUUID());
 
-        when(walletRepository.findById(payerId)).thenReturn(Optional.of(payerWallet));
-        when(walletRepository.findById(payeeId)).thenReturn(Optional.of(payeeWallet));
-        when(payerWallet.getUserId()).thenReturn(userId);
-        when(payerWallet.getId()).thenReturn(payerId);
-        when(payeeWallet.getUserId()).thenReturn(new UserId(UUID.randomUUID()));
-        when(payeeWallet.getId()).thenReturn(payeeId);
+        when(walletRepository.findByUserId(payerId)).thenReturn(Optional.of(payerWallet));
+        when(walletRepository.findByUserKey(payeeKey)).thenReturn(Optional.of(payeeWallet));
+        when(payerWallet.getId()).thenReturn(payerWalletId);
+        when(payeeWallet.getId()).thenReturn(payeeWalletId);
+        when(payerWallet.getUserId()).thenReturn(payerId);
+        when(payeeWallet.getUserId()).thenReturn(payeeUserId);
         when(payerWallet.getBalance()).thenReturn(new BigDecimal("70.00"));
         when(payeeWallet.getBalance()).thenReturn(new BigDecimal("130.00"));
 
-        walletService.transfer(transactionId, userId, payerId, payeeId, amount);
+        walletService.transaction(payerId, payeeKey, amount);
 
         verify(payerWallet).withdraw(amount);
         verify(payeeWallet).deposit(amount);
         verify(walletRepository).saveAll(List.of(payerWallet, payeeWallet));
-
-        verify(eventPublisher, times(2)).publishEvent(isA(WalletUpdatedEvent.class));
-        verify(eventPublisher).publishEvent(isA(TransactionUpdateStatusEvent.class));
     }
 
     @Test
-    void transfer_shouldThrow_whenPayerWalletNotFound() {
-        TransactionId transactionId = new TransactionId(UUID.randomUUID());
-        UserId userId = new UserId(UUID.randomUUID());
-        WalletId payerId = new WalletId(UUID.randomUUID());
-        WalletId payeeId = new WalletId(UUID.randomUUID());
-        BigDecimal amount = new BigDecimal("40.00");
+    void transaction_shouldThrow_whenPayerWalletNotFound() {
+        UserId payerId = new UserId(UUID.randomUUID());
+        String payeeKey = "payee-key";
+        BigDecimal amount = new BigDecimal("10.00");
 
-        when(walletRepository.findById(payerId)).thenReturn(Optional.empty());
+        when(walletRepository.findByUserId(payerId)).thenReturn(Optional.empty());
 
-        assertThrows(WalletNotFoundException.class, () ->
-                walletService.transfer(transactionId, userId, payerId, payeeId, amount));
+        assertThrows(WalletNotFoundException.class, () -> walletService.transaction(payerId, payeeKey, amount));
     }
 
     @Test
-    void transfer_shouldThrow_whenPayeeWalletNotFound() {
-        TransactionId transactionId = new TransactionId(UUID.randomUUID());
-        UserId userId = new UserId(UUID.randomUUID());
-        WalletId payerId = new WalletId(UUID.randomUUID());
-        WalletId payeeId = new WalletId(UUID.randomUUID());
-        BigDecimal amount = new BigDecimal("25.00");
-
+    void transaction_shouldThrow_whenPayeeWalletNotFound() {
+        UserId payerId = new UserId(UUID.randomUUID());
+        String payeeKey = "payee-key";
+        BigDecimal amount = new BigDecimal("10.00");
         Wallet payerWallet = mock(Wallet.class);
-        when(walletRepository.findById(payerId)).thenReturn(Optional.of(payerWallet));
-        when(payerWallet.getUserId()).thenReturn(userId);
-        when(walletRepository.findById(payeeId)).thenReturn(Optional.empty());
 
-        assertThrows(WalletNotFoundException.class, () ->
-                walletService.transfer(transactionId, userId, payerId, payeeId, amount));
+        when(walletRepository.findByUserId(payerId)).thenReturn(Optional.of(payerWallet));
+        when(walletRepository.findByUserKey(payeeKey)).thenReturn(Optional.empty());
+
+        assertThrows(WalletNotFoundException.class, () -> walletService.transaction(payerId, payeeKey, amount));
     }
 
     @Test
-    void transfer_shouldThrow_whenUnauthorizedUser() {
-        TransactionId transactionId = new TransactionId(UUID.randomUUID());
-        UserId userId = new UserId(UUID.randomUUID());
-        WalletId payerId = new WalletId(UUID.randomUUID());
-        WalletId payeeId = new WalletId(UUID.randomUUID());
-        BigDecimal amount = new BigDecimal("60.00");
+    void transaction_shouldThrow_whenPayerAndPayeeAreTheSame() {
+        UserId payerId = new UserId(UUID.randomUUID());
+        String payeeKey = "payee-key";
+        BigDecimal amount = new BigDecimal("10.00");
+        Wallet wallet = mock(Wallet.class);
+        WalletId walletId = new WalletId(UUID.randomUUID());
 
-        Wallet payerWallet = mock(Wallet.class);
-        when(walletRepository.findById(payerId)).thenReturn(Optional.of(payerWallet));
-        when(payerWallet.getUserId()).thenReturn(new UserId(UUID.randomUUID()));
+        when(walletRepository.findByUserId(payerId)).thenReturn(Optional.of(wallet));
+        when(walletRepository.findByUserKey(payeeKey)).thenReturn(Optional.of(wallet));
+        when(wallet.getId()).thenReturn(walletId);
 
-        assertThrows(UnauthorizeOperationException.class, () ->
-                walletService.transfer(transactionId, userId, payerId, payeeId, amount));
-
-        verify(eventPublisher).publishEvent(isA(TransactionUpdateStatusEvent.class));
+        assertThrows(UnauthorizeOperationException.class, () -> walletService.transaction(payerId, payeeKey, amount));
+        verify(eventPublisher, atLeastOnce()).publishEvent(any(TransactionUpdateStatusEvent.class));
     }
 
     @Test
-    void transfer_shouldPublishFailedEvent_whenExceptionOccurs() {
-        TransactionId transactionId = new TransactionId(UUID.randomUUID());
-        UserId userId = new UserId(UUID.randomUUID());
-        WalletId payerId = new WalletId(UUID.randomUUID());
-        WalletId payeeId = new WalletId(UUID.randomUUID());
-        BigDecimal amount = new BigDecimal("70.00");
-
+    void executeTransaction_shouldWithdrawFromPayerAndDepositToPayeeAndPublishEvents() {
+        TransactionId transactionId = new TransactionId();
+        UserId payerId = new UserId(UUID.randomUUID());
+        UserId payeeId = new UserId(UUID.randomUUID());
         Wallet payerWallet = mock(Wallet.class);
         Wallet payeeWallet = mock(Wallet.class);
+        WalletId payerWalletId = new WalletId(UUID.randomUUID());
+        WalletId payeeWalletId = new WalletId(UUID.randomUUID());
+        BigDecimal amount = new BigDecimal("25.00");
 
-        when(walletRepository.findById(payerId)).thenReturn(Optional.of(payerWallet));
-        when(walletRepository.findById(payeeId)).thenReturn(Optional.of(payeeWallet));
-        when(payerWallet.getUserId()).thenReturn(userId);
+        when(payerWallet.getUserId()).thenReturn(payerId);
+        when(payeeWallet.getUserId()).thenReturn(payeeId);
+        when(payerWallet.getId()).thenReturn(payerWalletId);
+        when(payeeWallet.getId()).thenReturn(payeeWalletId);
+        when(payerWallet.getBalance()).thenReturn(new BigDecimal("75.00"));
+        when(payeeWallet.getBalance()).thenReturn(new BigDecimal("125.00"));
 
-        doThrow(new RuntimeException("withdraw error")).when(payerWallet).withdraw(amount);
+        walletService.executeTransaction(transactionId, payerWallet, payeeWallet, amount);
 
-        assertThrows(RuntimeException.class, () ->
-                walletService.transfer(transactionId, userId, payerId, payeeId, amount));
-
-        verify(eventPublisher).publishEvent(isA(TransactionUpdateStatusEvent.class));
+        verify(payerWallet).withdraw(amount);
+        verify(payeeWallet).deposit(amount);
+        verify(walletRepository).saveAll(List.of(payerWallet, payeeWallet));
+        verify(eventPublisher, atLeastOnce()).publishEvent(any(WalletUpdatedEvent.class));
+        verify(eventPublisher, atLeastOnce()).publishEvent(any(TransactionUpdateStatusEvent.class));
     }
 }

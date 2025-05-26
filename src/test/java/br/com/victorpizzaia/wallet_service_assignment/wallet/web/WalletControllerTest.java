@@ -4,10 +4,13 @@ import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
 import br.com.victorpizzaia.wallet_service_assignment.user.application.usecase.CreateUserUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.DepositUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.GetActualBalanceUseCase;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.TransactionUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.WithdrawUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.BalanceResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.CreateWalletRequest;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletAmountRequest;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletTransactionRequest;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
@@ -25,6 +28,7 @@ class WalletControllerTest {
     private GetActualBalanceUseCase getActualBalanceUseCase;
     private DepositUseCase depositUseCase;
     private WithdrawUseCase withdrawUseCase;
+    private TransactionUseCase transactionUseCase;
     private WalletController walletController;
     private String user = UUID.randomUUID().toString();
 
@@ -34,11 +38,13 @@ class WalletControllerTest {
         getActualBalanceUseCase = mock(GetActualBalanceUseCase.class);
         depositUseCase = mock(DepositUseCase.class);
         withdrawUseCase = mock(WithdrawUseCase.class);
+        transactionUseCase = mock(TransactionUseCase.class);
         walletController = new WalletController(
                 createUserUseCase,
                 getActualBalanceUseCase,
                 depositUseCase,
-                withdrawUseCase
+                withdrawUseCase,
+                transactionUseCase
         );
     }
 
@@ -98,5 +104,16 @@ class WalletControllerTest {
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         verify(withdrawUseCase).withdraw(new UserId(user), BigDecimal.valueOf(200));
+    }
+    @Test
+    void transaction_shouldCallTransactionUseCaseAndReturnOk() {
+        Authentication authentication = mock(Authentication.class);
+        when(authentication.getName()).thenReturn(user);
+        WalletTransactionRequest transactionRequest = mock(WalletTransactionRequest.class);
+
+        ResponseEntity<Void> response = walletController.transaction(authentication, transactionRequest);
+
+        assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
+        verify(transactionUseCase).transaction(new UserId(user), transactionRequest);
     }
 }

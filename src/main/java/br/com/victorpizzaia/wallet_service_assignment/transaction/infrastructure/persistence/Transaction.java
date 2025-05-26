@@ -12,6 +12,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.EqualsAndHashCode;
@@ -40,6 +42,7 @@ public class Transaction {
     private BigDecimal amount;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private TransactionStatus status = TransactionStatus.PENDING;
 
     @Column
@@ -58,10 +61,6 @@ public class Transaction {
     }
 
     public Transaction(TransactionId id, WalletId payerId, WalletId payeeId, @PositiveAmount BigDecimal amount) {
-        if (payerId.equals(payeeId)) {
-            throw new IllegalArgumentException("Payer and payee cannot be the same wallet");
-        }
-
         this.id = id;
         this.payerId = payerId;
         this.payeeId = payeeId;

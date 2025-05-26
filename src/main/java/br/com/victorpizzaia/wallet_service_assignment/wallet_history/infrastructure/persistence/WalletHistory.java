@@ -12,6 +12,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
 import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import lombok.EqualsAndHashCode;
@@ -45,6 +47,7 @@ public class WalletHistory {
     private BigDecimal amount;
 
     @Column(name = "transaction_type", nullable = false)
+    @Enumerated(EnumType.STRING)
     private WalletTransactionType transactionType;
 
     @Column(name = "created_at")

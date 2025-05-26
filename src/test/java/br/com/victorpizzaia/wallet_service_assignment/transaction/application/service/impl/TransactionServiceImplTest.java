@@ -77,4 +77,48 @@ class TransactionServiceImplTest {
         );
         verify(transactionRepository, never()).save(any());
     }
+
+    @Test
+    void createTransaction_shouldSaveTransactionWithCorrectParameters() {
+        TransactionId transactionId = new TransactionId(UUID.randomUUID());
+        WalletId payerId = new WalletId(UUID.randomUUID());
+        WalletId payeeId = new WalletId(UUID.randomUUID());
+        BigDecimal amount = new BigDecimal("250.00");
+
+        transactionService.createTransaction(transactionId, payerId, payeeId, amount);
+
+        verify(transactionRepository, times(1)).save(argThat(tx ->
+            tx.getId().equals(transactionId) &&
+            tx.getPayerId().equals(payerId) &&
+            tx.getPayeeId().equals(payeeId) &&
+            tx.getAmount().compareTo(amount) == 0
+        ));
+    }
+
+    @Test
+    void updateTransactionStatus_shouldSaveTransactionAfterStatusUpdate() {
+        TransactionId transactionId = new TransactionId(UUID.randomUUID());
+        Transaction transaction = spy(new Transaction(transactionId, new WalletId(UUID.randomUUID()), new WalletId(UUID.randomUUID()), new BigDecimal("50.00")));
+
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
+
+        transactionService.updateTransactionStatus(transactionId, TransactionStatus.COMPLETED, null);
+
+        verify(transactionRepository, times(1)).save(transaction);
+        verify(transaction, times(1)).complete();
+    }
+
+    @Test
+    void updateTransactionStatus_shouldCallFailWithMessage_whenStatusIsFailed() {
+        TransactionId transactionId = new TransactionId(UUID.randomUUID());
+        Transaction transaction = spy(new Transaction(transactionId, new WalletId(UUID.randomUUID()), new WalletId(UUID.randomUUID()), new BigDecimal("75.00")));
+        String failMessage = "Some failure";
+
+        when(transactionRepository.findById(transactionId)).thenReturn(Optional.of(transaction));
+
+        transactionService.updateTransactionStatus(transactionId, TransactionStatus.FAILED, failMessage);
+
+        verify(transactionRepository, times(1)).save(transaction);
+        verify(transaction, times(1)).fail(failMessage);
+    }
 }

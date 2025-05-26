@@ -11,6 +11,7 @@ import org.springframework.transaction.annotation.Transactional;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.TransactionId;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.WalletId;
+import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.TransactionCreatedEvent;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.TransactionUpdateStatusEvent;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.WalletUpdatedEvent;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.service.WalletService;
@@ -71,35 +72,45 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public void transfer(TransactionId transactionId, UserId userId, WalletId payerId, WalletId payeeId, BigDecimal amount) {
-        Wallet payerWallet = validateWalletExists(walletRepository.findById(payerId), payerId);
+    public void transaction(UserId payerId, String payeeKey, BigDecimal amount) {
+        Wallet payerWallet = validateWalletExists(walletRepository.findByUserId(payerId));
+        Wallet payeeWallet = validateWalletExists(walletRepository.findByUserKey(payeeKey));
 
-        if (!payerWallet.getUserId().equals(userId)) {
-            publishTransactionEvent(transactionId, FAILED_STATUS, "Unauthorized transfer attempt");
-            throw new UnauthorizeOperationException("Unauthorized transfer attempt by user: " + userId, 403);
-        }
+        TransactionId transactionId = new TransactionId();
+        publishCreateTransactionEvent(transactionId, payerWallet.getId(), payeeWallet.getId(), amount);
 
-        Wallet payeeWallet = validateWalletExists(walletRepository.findById(payeeId), payeeId);
+        validatePayerAndPayeeAsTheSame(payerWallet, payeeWallet, transactionId);
+        executeTransaction(transactionId, payerWallet, payeeWallet, amount);
+    }
 
-        try {
-            payerWallet.withdraw(amount);
-            payeeWallet.deposit(amount);
+    private Wallet validateWalletExists(Optional<Wallet> wallet) {
+        return wallet.orElseThrow(() -> new WalletNotFoundException("Wallet not found", 404));
+    }
 
-            walletRepository.saveAll(List.of(payerWallet, payeeWallet));
-
-            publishWalletUpdateEvent(userId, payerWallet.getId(), payerWallet.getBalance(), amount, WITHDRAW);
-            publishWalletUpdateEvent(payeeWallet.getUserId(), payeeWallet.getId(), payeeWallet.getBalance(), amount, DEPOSIT);
-            publishTransactionEvent(transactionId, COMPLETED_STATUS, "Transfer successful");
-        } catch (Exception e) {
-            publishTransactionEvent(transactionId, FAILED_STATUS, "Unexpected error");
-            throw new RuntimeException("Transfer failed due to unexpected error: " + e.getMessage(), e);
+    private void validatePayerAndPayeeAsTheSame(Wallet payerWallet, Wallet payeeWallet, TransactionId transactionId) {
+        if (payerWallet.getId().equals(payeeWallet.getId())) {
+            publishUpdateTransactionEvent(transactionId, FAILED_STATUS, "Payer and payee cannot be the same wallet");
+            throw new UnauthorizeOperationException("Payer and payee cannot be the same wallet for transaction", 403);
         }
     }
 
-    private Wallet validateWalletExists(Optional<Wallet> wallet, WalletId walletId) {
-        return wallet.orElseThrow(() -> new WalletNotFoundException("Wallet not found: " + walletId, 404));
+    @Transactional
+    public void executeTransaction(TransactionId transactionId, Wallet payerWallet, Wallet payeeWallet, BigDecimal amount) {
+        payerWallet.withdraw(amount);
+        payeeWallet.deposit(amount);
+
+        walletRepository.saveAll(List.of(payerWallet, payeeWallet));
+
+        publishWalletUpdateEvent(payerWallet.getUserId(), payerWallet.getId(), payerWallet.getBalance(), amount, WITHDRAW);
+        publishWalletUpdateEvent(payeeWallet.getUserId(), payeeWallet.getId(), payeeWallet.getBalance(), amount, DEPOSIT);
+        publishUpdateTransactionEvent(transactionId, COMPLETED_STATUS, "Transfer successful");
     }
-    private void publishTransactionEvent(TransactionId transactionId, String status, String message) {
+
+    private void publishCreateTransactionEvent(TransactionId transactionId, WalletId payerId, WalletId payeeId, BigDecimal amount) {
+        eventPublisher.publishEvent(new TransactionCreatedEvent(transactionId, payerId, payeeId, amount));
+    }
+
+    private void publishUpdateTransactionEvent(TransactionId transactionId, String status, String message) {
         eventPublisher.publishEvent(new TransactionUpdateStatusEvent(transactionId, status, message));
     }
 
