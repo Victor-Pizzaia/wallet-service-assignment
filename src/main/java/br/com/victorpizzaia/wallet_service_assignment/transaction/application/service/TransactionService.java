@@ -8,5 +8,5 @@ import br.com.victorpizzaia.wallet_service_assignment.transaction.domain.Transac
 
 public interface TransactionService {
     void updateTransactionStatus(TransactionId transactionId, TransactionStatus status, String message);
-    void createTransaction(TransactionId transactionId, WalletId payerId, WalletId payeeKey, BigDecimal amount);
+    void createTransaction(TransactionId transactionId, WalletId payerId, WalletId payeeId, BigDecimal amount);
 }

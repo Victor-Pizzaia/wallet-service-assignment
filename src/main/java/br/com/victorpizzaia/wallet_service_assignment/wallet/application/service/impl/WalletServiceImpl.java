@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.cache.Cache;
+import org.springframework.cache.CacheManager;
 import org.springframework.cache.annotation.CachePut;
 import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
@@ -17,6 +19,7 @@ import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.Transa
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.TransactionUpdateStatusEvent;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.WalletUpdatedEvent;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.service.WalletService;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.TransactionCreatedResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.exception.UnauthorizeOperationException;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.exception.WalletNotFoundException;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.infrastructure.persistence.Wallet;
@@ -29,15 +32,21 @@ public class WalletServiceImpl implements WalletService {
 
     private final WalletRepository walletRepository;
     private final ApplicationEventPublisher eventPublisher;
+    private final CacheManager cacheManager;
+
     private static final String COMPLETED_STATUS = "COMPLETED";
+    private static final String PENDING_STATUS = "PENDING";
     private static final String FAILED_STATUS = "FAILED";
     private static final String DEPOSIT = "DEPOSIT";
     private static final String WITHDRAW = "WITHDRAW";
     private static final String TRANSFER = "TRANSFER";
+    private static final String CACHE_VALUE = "walletBalance";
+    private static final String CACHE_KEY = "#userId";
 
-    public WalletServiceImpl(WalletRepository walletRepository, ApplicationEventPublisher eventPublisher) {
+    public WalletServiceImpl(WalletRepository walletRepository, ApplicationEventPublisher eventPublisher, CacheManager cacheManager) {
         this.walletRepository = walletRepository;
         this.eventPublisher = eventPublisher;
+        this.cacheManager = cacheManager;
     }
 
     @Override
@@ -49,7 +58,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
-    @Cacheable(value = "walletBalance", key = "#userId")
+    @Cacheable(value = CACHE_VALUE, key = CACHE_KEY)
     public BigDecimal getActualBalance(UserId userId) {
         log.info("Retrieving balance for user: {}", userId);
         return walletRepository.findBalanceByUserId(userId)
@@ -58,7 +67,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    @CachePut(value = "walletBalance", key = "#userId")
+    @CachePut(value = CACHE_VALUE, key = CACHE_KEY)
     public BigDecimal deposit(UserId userId, BigDecimal amount) {
         log.info("Depositing amount: {} for user: {}", amount, userId);
         Wallet wallet = walletRepository.findByUserId(userId)
@@ -72,7 +81,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    @CachePut(value = "walletBalance", key = "#userId")
+    @CachePut(value = CACHE_VALUE, key = CACHE_KEY)
     public BigDecimal withdraw(UserId userId, BigDecimal amount) {
         log.info("Withdrawing amount: {} for user: {}", amount, userId);
         Wallet wallet = walletRepository.findByUserId(userId)
@@ -86,45 +95,56 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    @CachePut(value = "walletBalance", key = "#payerId")
-    public BigDecimal transaction(UserId payerId, String payeeKey, BigDecimal amount) {
+    public TransactionCreatedResponse transaction(UserId payerId, String payeeKey, BigDecimal amount) {
         log.info("Processing transaction from payer: {} to payee: {} with amount: {}", payerId, payeeKey, amount);
         Wallet payerWallet = validateWalletExists(walletRepository.findByUserId(payerId));
         Wallet payeeWallet = validateWalletExists(walletRepository.findByUserKey(payeeKey));
-
         log.info("Payer wallet: {}, Payee wallet: {}", payerWallet.getId(), payeeWallet.getId());
+
+        validatePayerAndPayeeAsTheSame(payerWallet, payeeWallet);
 
         TransactionId transactionId = new TransactionId();
         publishCreateTransactionEvent(transactionId, payerWallet.getId(), payeeWallet.getId(), amount);
-
-        validatePayerAndPayeeAsTheSame(payerWallet, payeeWallet, transactionId);
-        executeTransaction(transactionId, payerWallet, payeeWallet, amount);
-        return payerWallet.getBalance();
+        return new TransactionCreatedResponse(transactionId, PENDING_STATUS, "Transaction request accepted and being processed.");
     }
 
     private Wallet validateWalletExists(Optional<Wallet> wallet) {
         return wallet.orElseThrow(() -> new WalletNotFoundException("Wallet not found", 404));
     }
 
-    private void validatePayerAndPayeeAsTheSame(Wallet payerWallet, Wallet payeeWallet, TransactionId transactionId) {
+    private void validatePayerAndPayeeAsTheSame(Wallet payerWallet, Wallet payeeWallet) {
         if (payerWallet.getId().equals(payeeWallet.getId())) {
-            publishUpdateTransactionEvent(transactionId, FAILED_STATUS, "Payer and payee cannot be the same wallet");
             throw new UnauthorizeOperationException("Payer and payee cannot be the same wallet for transaction", 403);
         }
     }
 
+    @Override
     @Transactional
-    public void executeTransaction(TransactionId transactionId, Wallet payerWallet, Wallet payeeWallet, BigDecimal amount) {
-        log.info("Executing transaction ID: {} from payer: {} to payee: {} with amount: {}", transactionId, payerWallet.getId(), payeeWallet.getId(), amount);
-        payerWallet.withdraw(amount);
-        payeeWallet.deposit(amount);
+    public void executeTransaction(TransactionId transactionId, WalletId payerId, WalletId payeeId, BigDecimal amount) {
+        log.info("Executing transaction ID: {} from payer: {} to payee: {} with amount: {}", transactionId, payerId, payeeId, amount);
+        try {
+            Wallet payerWallet = walletRepository.findById(payerId).orElseThrow(() -> new WalletNotFoundException("Wallet not found", 404));
+            Wallet payeeWallet = walletRepository.findById(payeeId).orElseThrow(() -> new WalletNotFoundException("Wallet not found", 404));
 
-        walletRepository.saveAll(List.of(payerWallet, payeeWallet));
+            payerWallet.withdraw(amount);
+            payeeWallet.deposit(amount);
 
-        log.info("Transaction: {} completed successfully", transactionId);
-        publishWalletUpdateEvent(payerWallet.getUserId(), payerWallet.getId(), payerWallet.getBalance(), amount, TRANSFER);
-        publishWalletUpdateEvent(payeeWallet.getUserId(), payeeWallet.getId(), payeeWallet.getBalance(), amount, TRANSFER);
-        publishUpdateTransactionEvent(transactionId, COMPLETED_STATUS, "Transfer successful");
+            walletRepository.saveAll(List.of(payerWallet, payeeWallet));
+
+            Cache cache = cacheManager.getCache(CACHE_VALUE);
+            if (cache != null) {
+                cache.put(payerWallet.getUserId(), payerWallet.getBalance());
+                cache.put(payeeWallet.getUserId(), payeeWallet.getBalance());
+            }
+
+            log.info("Transaction: {} completed successfully", transactionId);
+            publishWalletUpdateEvent(payerWallet.getUserId(), payerWallet.getId(), payerWallet.getBalance(), amount, TRANSFER);
+            publishWalletUpdateEvent(payeeWallet.getUserId(), payeeWallet.getId(), payeeWallet.getBalance(), amount, TRANSFER);
+            publishUpdateTransactionEvent(transactionId, COMPLETED_STATUS, "Transfer successful");
+        } catch (Exception e) {
+            publishUpdateTransactionEvent(transactionId, FAILED_STATUS, e.getMessage());
+            throw e;
+        }
     }
 
     private void publishCreateTransactionEvent(TransactionId transactionId, WalletId payerId, WalletId payeeId, BigDecimal amount) {

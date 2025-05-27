@@ -7,22 +7,28 @@ import br.com.victorpizzaia.wallet_service_assignment.transaction.infrastructure
 import br.com.victorpizzaia.wallet_service_assignment.transaction.infrastructure.persistence.TransactionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.ApplicationEventPublisher;
+
 import java.util.Optional;
 import java.util.UUID;
 import java.math.BigDecimal;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.*;
 
 class TransactionServiceImplTest {
 
     private TransactionRepository transactionRepository;
     private TransactionServiceImpl transactionService;
+    private ApplicationEventPublisher eventPublisher;
 
     @BeforeEach
     void setUp() {
         transactionRepository = mock(TransactionRepository.class);
-        transactionService = new TransactionServiceImpl(transactionRepository);
+        eventPublisher = mock(ApplicationEventPublisher.class);
+        transactionService = new TransactionServiceImpl(transactionRepository, eventPublisher);
     }
 
     @Test

@@ -17,6 +17,7 @@ import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.WithdrawUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.BalanceResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.CreateWalletRequest;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.TransactionCreatedResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletAmountRequest;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletTransactionRequest;
 import jakarta.validation.Valid;
@@ -80,7 +81,7 @@ public class WalletController {
     }
 
     @PostMapping("/transaction")
-    public ResponseEntity<BalanceResponse> transaction(Authentication authentication, @Valid @RequestBody WalletTransactionRequest walletTransactionRequest) {
+    public ResponseEntity<TransactionCreatedResponse> transaction(Authentication authentication, @Valid @RequestBody WalletTransactionRequest walletTransactionRequest) {
         log.info("New request to transaction received");
         String userId = authentication.getName();
 

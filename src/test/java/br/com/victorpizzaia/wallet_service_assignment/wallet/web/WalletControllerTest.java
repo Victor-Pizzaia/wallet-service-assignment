@@ -8,6 +8,7 @@ import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.WithdrawUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.BalanceResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.CreateWalletRequest;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.TransactionCreatedResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletAmountRequest;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletTransactionRequest;
 
@@ -17,6 +18,8 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
 import java.math.BigDecimal;
@@ -111,7 +114,7 @@ class WalletControllerTest {
         when(authentication.getName()).thenReturn(user);
         WalletTransactionRequest transactionRequest = mock(WalletTransactionRequest.class);
 
-        ResponseEntity<BalanceResponse> response = walletController.transaction(authentication, transactionRequest);
+        ResponseEntity<TransactionCreatedResponse> response = walletController.transaction(authentication, transactionRequest);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         verify(transactionUseCase).transaction(new UserId(user), transactionRequest);

@@ -12,6 +12,7 @@ import br.com.victorpizzaia.wallet_service_assignment.wallet.infrastructure.pers
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
+import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import java.math.BigDecimal;
 import java.util.List;
@@ -26,12 +27,13 @@ class WalletServiceImplTest {
     private WalletRepository walletRepository;
     private ApplicationEventPublisher eventPublisher;
     private WalletServiceImpl walletService;
+    private CacheManager cacheManager;
 
     @BeforeEach
     void setUp() {
         walletRepository = mock(WalletRepository.class);
         eventPublisher = mock(ApplicationEventPublisher.class);
-        walletService = new WalletServiceImpl(walletRepository, eventPublisher);
+        walletService = new WalletServiceImpl(walletRepository, eventPublisher, cacheManager);
     }
 
     @Test
@@ -220,7 +222,7 @@ class WalletServiceImplTest {
         when(payerWallet.getBalance()).thenReturn(new BigDecimal("75.00"));
         when(payeeWallet.getBalance()).thenReturn(new BigDecimal("125.00"));
 
-        walletService.executeTransaction(transactionId, payerWallet, payeeWallet, amount);
+        walletService.executeTransaction(transactionId, payerWallet.getId(), payeeWallet.getId(), amount);
 
         verify(payerWallet).withdraw(amount);
         verify(payeeWallet).deposit(amount);
