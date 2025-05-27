@@ -6,6 +6,7 @@ import br.com.victorpizzaia.wallet_service_assignment.shared.application.UseCase
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.service.WalletService;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.DepositUseCase;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.BalanceResponse;
 
 @UseCase
 public class DepositUseCaseImpl implements DepositUseCase {
@@ -17,7 +18,7 @@ public class DepositUseCaseImpl implements DepositUseCase {
     }
 
     @Override
-    public void deposit(UserId userId, BigDecimal amount) {
-        walletService.deposit(userId, amount);
+    public BalanceResponse deposit(UserId userId, BigDecimal amount) {
+        return new BalanceResponse(walletService.deposit(userId, amount));
     }
 }

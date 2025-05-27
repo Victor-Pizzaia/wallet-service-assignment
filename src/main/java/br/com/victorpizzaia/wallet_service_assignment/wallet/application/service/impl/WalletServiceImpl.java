@@ -4,6 +4,8 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.cache.annotation.CachePut;
+import org.springframework.cache.annotation.Cacheable;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -47,6 +49,7 @@ public class WalletServiceImpl implements WalletService {
     }
 
     @Override
+    @Cacheable(value = "walletBalance", key = "#userId")
     public BigDecimal getActualBalance(UserId userId) {
         log.info("Retrieving balance for user: {}", userId);
         return walletRepository.findBalanceByUserId(userId)
@@ -55,7 +58,8 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    public void deposit(UserId userId, BigDecimal amount) {
+    @CachePut(value = "walletBalance", key = "#userId")
+    public BigDecimal deposit(UserId userId, BigDecimal amount) {
         log.info("Depositing amount: {} for user: {}", amount, userId);
         Wallet wallet = walletRepository.findByUserId(userId)
             .orElseThrow(() -> new WalletNotFoundException("Wallet not found for user: " + userId, 404));
@@ -63,11 +67,13 @@ public class WalletServiceImpl implements WalletService {
         wallet.deposit(amount);
         walletRepository.save(wallet);
         publishWalletUpdateEvent(userId, wallet.getId(), wallet.getBalance(), amount, DEPOSIT);
+        return wallet.getBalance();
     }
 
     @Override
     @Transactional
-    public void withdraw(UserId userId, BigDecimal amount) {
+    @CachePut(value = "walletBalance", key = "#userId")
+    public BigDecimal withdraw(UserId userId, BigDecimal amount) {
         log.info("Withdrawing amount: {} for user: {}", amount, userId);
         Wallet wallet = walletRepository.findByUserId(userId)
             .orElseThrow(() -> new WalletNotFoundException("Wallet not found for user: " + userId, 404));
@@ -75,11 +81,13 @@ public class WalletServiceImpl implements WalletService {
         wallet.withdraw(amount);
         walletRepository.save(wallet);
         publishWalletUpdateEvent(userId, wallet.getId(), wallet.getBalance(), amount, WITHDRAW);
+        return wallet.getBalance();
     }
 
     @Override
     @Transactional
-    public void transaction(UserId payerId, String payeeKey, BigDecimal amount) {
+    @CachePut(value = "walletBalance", key = "#userId")
+    public BigDecimal transaction(UserId payerId, String payeeKey, BigDecimal amount) {
         log.info("Processing transaction from payer: {} to payee: {} with amount: {}", payerId, payeeKey, amount);
         Wallet payerWallet = validateWalletExists(walletRepository.findByUserId(payerId));
         Wallet payeeWallet = validateWalletExists(walletRepository.findByUserKey(payeeKey));
@@ -91,6 +99,7 @@ public class WalletServiceImpl implements WalletService {
 
         validatePayerAndPayeeAsTheSame(payerWallet, payeeWallet, transactionId);
         executeTransaction(transactionId, payerWallet, payeeWallet, amount);
+        return payerWallet.getBalance();
     }
 
     private Wallet validateWalletExists(Optional<Wallet> wallet) {

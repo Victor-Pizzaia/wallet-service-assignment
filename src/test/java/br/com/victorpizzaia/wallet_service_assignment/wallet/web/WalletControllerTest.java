@@ -87,7 +87,7 @@ class WalletControllerTest {
         WalletAmountRequest depositRequest = mock(WalletAmountRequest.class);
         when(depositRequest.amount()).thenReturn(BigDecimal.valueOf(500));
 
-        ResponseEntity<Void> response = walletController.deposit(authentication, depositRequest);
+        ResponseEntity<BalanceResponse> response = walletController.deposit(authentication, depositRequest);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         verify(depositUseCase).deposit(new UserId(user), BigDecimal.valueOf(500));
@@ -100,7 +100,7 @@ class WalletControllerTest {
         WalletAmountRequest withdrawRequest = mock(WalletAmountRequest.class);
         when(withdrawRequest.amount()).thenReturn(BigDecimal.valueOf(200));
 
-        ResponseEntity<Void> response = walletController.withdraw(authentication, withdrawRequest);
+        ResponseEntity<BalanceResponse> response = walletController.withdraw(authentication, withdrawRequest);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         verify(withdrawUseCase).withdraw(new UserId(user), BigDecimal.valueOf(200));
@@ -111,7 +111,7 @@ class WalletControllerTest {
         when(authentication.getName()).thenReturn(user);
         WalletTransactionRequest transactionRequest = mock(WalletTransactionRequest.class);
 
-        ResponseEntity<Void> response = walletController.transaction(authentication, transactionRequest);
+        ResponseEntity<BalanceResponse> response = walletController.transaction(authentication, transactionRequest);
 
         assertThat(response.getStatusCode().is2xxSuccessful()).isTrue();
         verify(transactionUseCase).transaction(new UserId(user), transactionRequest);

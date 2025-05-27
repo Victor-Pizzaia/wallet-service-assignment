@@ -4,6 +4,7 @@ import br.com.victorpizzaia.wallet_service_assignment.shared.application.UseCase
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.service.WalletService;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.TransactionUseCase;
+import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.BalanceResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletTransactionRequest;
 
 @UseCase
@@ -16,7 +17,7 @@ public class TransactionUseCaseImpl implements TransactionUseCase {
     }
 
 	@Override
-	public void transaction(UserId userId, WalletTransactionRequest request) {
-		walletService.transaction(userId, request.payeeKey(), request.amount());
+	public BalanceResponse transaction(UserId userId, WalletTransactionRequest request) {
+		return new BalanceResponse(walletService.transaction(userId, request.payeeKey(), request.amount()));
 	}
 }
