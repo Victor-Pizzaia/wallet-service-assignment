@@ -5,5 +5,4 @@ import java.util.Map;
 
 public record ValidationErrorResponse(String message, List<Map.Entry<String, String>> errors) {
 
-
 }

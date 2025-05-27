@@ -20,10 +20,12 @@ import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.CreateWallet
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletAmountRequest;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletTransactionRequest;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/wallets")
 @Validated
+@Slf4j
 public class WalletController {
 
     private final CreateUserUseCase createUserUseCase;
@@ -54,6 +56,7 @@ public class WalletController {
 
     @GetMapping("/balance")
     public ResponseEntity<BalanceResponse> getBalance(Authentication authentication) {
+        log.info("New request to get balance received");
         String userId = authentication.getName();
 
         BalanceResponse actualBalance = getActualBalanceUseCase.getActualBalance(new UserId(userId));
@@ -62,6 +65,7 @@ public class WalletController {
 
     @PostMapping("/deposit")
     public ResponseEntity<Void> deposit(Authentication authentication, @Valid @RequestBody WalletAmountRequest depositRequest) {
+        log.info("New request to deposit received");
         String userId = authentication.getName();
         depositUseCase.deposit(new UserId(userId), depositRequest.amount());
         return ResponseEntity.ok().build();
@@ -69,6 +73,7 @@ public class WalletController {
 
     @PostMapping("/withdraw")
     public ResponseEntity<Void> withdraw(Authentication authentication, @Valid @RequestBody WalletAmountRequest withdrawRequest) {
+        log.info("New request to withdraw received");
         String userId = authentication.getName();
         withdrawUseCase.withdraw(new UserId(userId), withdrawRequest.amount());
         return ResponseEntity.ok().build();
@@ -76,6 +81,7 @@ public class WalletController {
 
     @PostMapping("/transaction")
     public ResponseEntity<Void> transaction(Authentication authentication, @Valid @RequestBody WalletTransactionRequest walletTransactionRequest) {
+        log.info("New request to transaction received");
         String userId = authentication.getName();
         transactionUseCase.transaction(new UserId(userId), walletTransactionRequest);
         return ResponseEntity.ok().build();

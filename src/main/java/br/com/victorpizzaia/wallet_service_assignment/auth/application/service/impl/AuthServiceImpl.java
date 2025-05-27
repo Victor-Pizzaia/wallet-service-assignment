@@ -11,8 +11,10 @@ import br.com.victorpizzaia.wallet_service_assignment.auth.domain.exception.User
 import br.com.victorpizzaia.wallet_service_assignment.auth.domain.exception.UserPasswordWrongException;
 import br.com.victorpizzaia.wallet_service_assignment.user.application.service.UserQueryService;
 import br.com.victorpizzaia.wallet_service_assignment.user.application.view.UserCredentialsView;
+import lombok.extern.slf4j.Slf4j;
 
 @Service
+@Slf4j
 public class AuthServiceImpl implements AuthService {
     private final JwtProvider jwtProvider;
     private final PasswordEncoderService passwordEncoderService;
@@ -26,6 +28,7 @@ public class AuthServiceImpl implements AuthService {
 
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
+        log.info("Attempting to login user with identifier: {}", loginRequest.identifier());
         UserCredentialsView user = userQueryService.findByEmailOrCpf(loginRequest.identifier())
             .orElseThrow(() -> new UserNotFound("User not found"));
 

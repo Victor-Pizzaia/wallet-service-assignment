@@ -1,7 +1,7 @@
 package br.com.victorpizzaia.wallet_service_assignment.wallet_history.domain;
 
 public enum WalletTransactionType {
-    DEPOSIT("DEPOSIT"), WITHDRAW("WITHDRAW");
+    DEPOSIT("DEPOSIT"), WITHDRAW("WITHDRAW"), TRANSFER("TRANSFER");
 
     private final String value;
 

@@ -11,10 +11,12 @@ import br.com.victorpizzaia.wallet_service_assignment.auth.application.service.A
 import br.com.victorpizzaia.wallet_service_assignment.auth.domain.LoginRequest;
 import br.com.victorpizzaia.wallet_service_assignment.auth.domain.LoginResponse;
 import jakarta.validation.Valid;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/auth")
 @Validated
+@Slf4j
 public class AuthController {
 
     private final AuthService authService;
@@ -25,6 +27,7 @@ public class AuthController {
 
     @PostMapping
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
+        log.info("Received login request");
         return ResponseEntity.ok(authService.login(request));
     }
 }

@@ -8,8 +8,10 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.ErrorResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.exception.UnauthorizeOperationException;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.exception.WalletNotFoundException;
+import lombok.extern.slf4j.Slf4j;
 
 @RestControllerAdvice
+@Slf4j
 public class WalletHandler {
 
     @ExceptionHandler(WalletNotFoundException.class)

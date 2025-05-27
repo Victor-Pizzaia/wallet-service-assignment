@@ -9,8 +9,7 @@ services:
       POSTGRES_DB: wallet_service_assignment
       POSTGRES_USER: root
       POSTGRES_PASSWORD: pizzaDeBatata
-#     volumes:
-#       - postgres_data:/var/lib/postgresql/data
+
   kafka:
     image: 'bitnami/kafka:latest'
     ports:
@@ -23,5 +22,31 @@ services:
       - KAFKA_CFG_LISTENER_SECURITY_PROTOCOL_MAP=CONTROLLER:PLAINTEXT,EXTERNAL:PLAINTEXT,PLAINTEXT:PLAINTEXT
       - KAFKA_CFG_CONTROLLER_QUORUM_VOTERS=0@kafka:9093
       - KAFKA_CFG_CONTROLLER_LISTENER_NAMES=CONTROLLER
-# volumes:
-#   postgres_data:
+ 
+  loki:
+    image: grafana/loki:2.9.3
+    container_name: loki
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+
+  promtail:
+    image: grafana/promtail:2.9.3
+    container_name: promtail
+    volumes:
+      - ./logs:/var/log
+      - ./promtail-config.yml:/etc/promtail/promtail.yml
+      - /etc/machine-id:/etc/machine-id:ro
+    command: -config.file=/etc/promtail/promtail.yml
+    depends_on:
+      - loki
+
+  grafana:
+    image: grafana/grafana:10.0.3
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    depends_on:
+      - loki

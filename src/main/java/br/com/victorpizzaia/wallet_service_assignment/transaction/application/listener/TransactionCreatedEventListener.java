@@ -5,8 +5,10 @@ import org.springframework.stereotype.Component;
 
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.TransactionCreatedEvent;
 import br.com.victorpizzaia.wallet_service_assignment.transaction.application.service.TransactionService;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
+@Slf4j
 public class TransactionCreatedEventListener {
     private final TransactionService transactionService;
 
@@ -16,6 +18,7 @@ public class TransactionCreatedEventListener {
 
     @ApplicationModuleListener
     public void onTransactionCreated(TransactionCreatedEvent event) {
+        log.info("Received TransactionCreatedEvent: {}", event.transactionId());
         transactionService.createTransaction(
             event.transactionId(),
             event.payerId(),
