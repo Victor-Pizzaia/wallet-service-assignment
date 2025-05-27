@@ -86,7 +86,7 @@ public class WalletServiceImpl implements WalletService {
 
     @Override
     @Transactional
-    @CachePut(value = "walletBalance", key = "#userId")
+    @CachePut(value = "walletBalance", key = "#payerId")
     public BigDecimal transaction(UserId payerId, String payeeKey, BigDecimal amount) {
         log.info("Processing transaction from payer: {} to payee: {} with amount: {}", payerId, payeeKey, amount);
         Wallet payerWallet = validateWalletExists(walletRepository.findByUserId(payerId));
