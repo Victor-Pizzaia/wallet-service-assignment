@@ -17,7 +17,7 @@ public class SecurityConfig {
           .csrf(csrf -> csrf.disable())
           .authorizeHttpRequests(auth -> auth
               .requestMatchers("/auth", "/auth/**").permitAll()
-              .requestMatchers("/wallets").permitAll()
+              .requestMatchers("/users").permitAll()
               .anyRequest().authenticated()
           )
           .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class)

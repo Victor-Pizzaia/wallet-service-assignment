@@ -10,19 +10,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
-import br.com.victorpizzaia.wallet_service_assignment.user.application.usecase.CreateUserUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.DepositUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.GetActualBalanceUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.TransactionUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.application.usecase.WithdrawUseCase;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.BalanceResponse;
-import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.CreateWalletRequest;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.TransactionCreatedResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletAmountRequest;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.WalletTransactionRequest;
 import jakarta.validation.Valid;
 import lombok.extern.slf4j.Slf4j;
-
 
 @RestController
 @RequestMapping("/wallets")
@@ -30,30 +27,20 @@ import lombok.extern.slf4j.Slf4j;
 @Slf4j
 public class WalletController {
 
-    private final CreateUserUseCase createUserUseCase;
     private final GetActualBalanceUseCase getActualBalanceUseCase;
     private final DepositUseCase depositUseCase;
     private final WithdrawUseCase withdrawUseCase;
     private final TransactionUseCase transactionUseCase;
 
     public WalletController(
-        CreateUserUseCase createUserUseCase,
         GetActualBalanceUseCase getActualBalanceUseCase,
         DepositUseCase depositUseCase,
         WithdrawUseCase withdrawUseCase,
         TransactionUseCase transactionUseCase) {
-        this.createUserUseCase = createUserUseCase;
         this.getActualBalanceUseCase = getActualBalanceUseCase;
         this.depositUseCase = depositUseCase;
         this.withdrawUseCase = withdrawUseCase;
         this.transactionUseCase = transactionUseCase;
-    }
-
-    @PostMapping
-    public ResponseEntity<UserId> createUserAndWallet(@Valid @RequestBody CreateWalletRequest createWalletRequest) {
-        UserId userId = createUserUseCase.createUser(createWalletRequest.fullname(),
-                createWalletRequest.cpf(), createWalletRequest.email(), createWalletRequest.plainPassword());
-        return ResponseEntity.ok(userId);
     }
 
     @GetMapping("/balance")

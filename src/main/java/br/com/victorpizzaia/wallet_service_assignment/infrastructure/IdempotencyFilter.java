@@ -32,7 +32,7 @@ public class IdempotencyFilter extends OncePerRequestFilter {
     }
 
     private static final Set<String> IGNORED_ROUTES = Set.of(
-        "wallets",
+        "users",
         "auth"
     );
 

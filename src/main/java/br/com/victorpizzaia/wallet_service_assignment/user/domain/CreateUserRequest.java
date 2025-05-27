@@ -1,9 +1,9 @@
-package br.com.victorpizzaia.wallet_service_assignment.wallet.domain;
+package br.com.victorpizzaia.wallet_service_assignment.user.domain;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
-public record CreateWalletRequest(
+public record CreateUserRequest(
     @NotNull
     @NotBlank
     String fullname,
@@ -17,5 +17,5 @@ public record CreateWalletRequest(
     @NotBlank
     String plainPassword
 ) {
-    
+
 }
