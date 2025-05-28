@@ -5,13 +5,16 @@ services:
     restart: always
     ports:
       - "5432:5432"
+    env_file:
+      - .env
     environment:
-      POSTGRES_DB: wallet_service_assignment
-      POSTGRES_USER: root
-      POSTGRES_PASSWORD: pizzaDeBatata
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
 
   kafka:
     image: 'bitnami/kafka:latest'
+    container_name: wallet_service_kafka
     ports:
       - '9094:9094'
     environment:
@@ -25,14 +28,14 @@ services:
  
   loki:
     image: grafana/loki:2.9.3
-    container_name: loki
+    container_name: wallet_service_loki
     ports:
       - "3100:3100"
     command: -config.file=/etc/loki/local-config.yaml
 
   promtail:
     image: grafana/promtail:2.9.3
-    container_name: promtail
+    container_name: wallet_service_promtail
     volumes:
       - ./logs:/var/log
       - ./promtail-config.yml:/etc/promtail/promtail.yml
@@ -43,7 +46,7 @@ services:
 
   grafana:
     image: grafana/grafana:10.0.3
-    container_name: grafana
+    container_name: wallet_service_grafana
     ports:
       - "3000:3000"
     environment:
@@ -53,6 +56,30 @@ services:
 
   redis:
     image: redis:latest
-    container_name: redis
+    container_name: wallet_service_redis
     ports:
       - "6379:6379"
+
+  wallet-service:
+    image: 'wallet-assignment'
+    container_name: wallet_service_app
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env
+    environment:
+      POSTGRES_HOST: ${POSTGRES_HOST}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRATION: ${JWT_EXPIRATION}
+      KAFKA_BOOTSTRAP_SERVERS: ${KAFKA_BOOTSTRAP_SERVERS}
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+    volumes:
+      - ./logs:/logs
+    depends_on:
+      - postgres
+      - kafka
+      - redis
