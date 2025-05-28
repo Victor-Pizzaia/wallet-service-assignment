@@ -5,7 +5,6 @@ import br.com.victorpizzaia.wallet_service_assignment.wallet_history.application
 import br.com.victorpizzaia.wallet_service_assignment.wallet_history.domain.PageResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet_history.domain.WalletHistoryResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet_history.domain.WalletTransactionType;
-import br.com.victorpizzaia.wallet_service_assignment.wallet_history.infrastructure.persistence.WalletHistory;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;

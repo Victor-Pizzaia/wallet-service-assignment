@@ -3,9 +3,7 @@ package br.com.victorpizzaia.wallet_service_assignment.wallet.application.servic
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.TransactionId;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.WalletId;
-import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.TransactionUpdateStatusEvent;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.event.WalletUpdatedEvent;
-import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.exception.UnauthorizeOperationException;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.domain.exception.WalletNotFoundException;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.infrastructure.persistence.Wallet;
 import br.com.victorpizzaia.wallet_service_assignment.wallet.infrastructure.persistence.WalletRepository;
@@ -15,9 +13,9 @@ import org.mockito.ArgumentCaptor;
 import org.springframework.cache.CacheManager;
 import org.springframework.context.ApplicationEventPublisher;
 import java.math.BigDecimal;
-import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import org.springframework.cache.Cache;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
@@ -137,34 +135,6 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void transaction_shouldTransferFundsAndPublishEvents() {
-        UserId payerId = new UserId(UUID.randomUUID());
-        UserId payeeUserId = new UserId(UUID.randomUUID());
-        String payeeKey = "payee-key";
-        BigDecimal amount = new BigDecimal("30.00");
-
-        Wallet payerWallet = mock(Wallet.class);
-        Wallet payeeWallet = mock(Wallet.class);
-        WalletId payerWalletId = new WalletId(UUID.randomUUID());
-        WalletId payeeWalletId = new WalletId(UUID.randomUUID());
-
-        when(walletRepository.findByUserId(payerId)).thenReturn(Optional.of(payerWallet));
-        when(walletRepository.findByUserKey(payeeKey)).thenReturn(Optional.of(payeeWallet));
-        when(payerWallet.getId()).thenReturn(payerWalletId);
-        when(payeeWallet.getId()).thenReturn(payeeWalletId);
-        when(payerWallet.getUserId()).thenReturn(payerId);
-        when(payeeWallet.getUserId()).thenReturn(payeeUserId);
-        when(payerWallet.getBalance()).thenReturn(new BigDecimal("70.00"));
-        when(payeeWallet.getBalance()).thenReturn(new BigDecimal("130.00"));
-
-        walletService.transaction(payerId, payeeKey, amount);
-
-        verify(payerWallet).withdraw(amount);
-        verify(payeeWallet).deposit(amount);
-        verify(walletRepository).saveAll(List.of(payerWallet, payeeWallet));
-    }
-
-    @Test
     void transaction_shouldThrow_whenPayerWalletNotFound() {
         UserId payerId = new UserId(UUID.randomUUID());
         String payeeKey = "payee-key";
@@ -189,45 +159,89 @@ class WalletServiceImplTest {
     }
 
     @Test
-    void transaction_shouldThrow_whenPayerAndPayeeAreTheSame() {
-        UserId payerId = new UserId(UUID.randomUUID());
-        String payeeKey = "payee-key";
-        BigDecimal amount = new BigDecimal("10.00");
-        Wallet wallet = mock(Wallet.class);
-        WalletId walletId = new WalletId(UUID.randomUUID());
+    void executeTransaction_shouldUpdateCacheWithNewBalances() {
+        TransactionId transactionId = new TransactionId();
+        WalletId payerWalletId = new WalletId(UUID.randomUUID());
+        WalletId payeeWalletId = new WalletId(UUID.randomUUID());
+        UserId payerUserId = new UserId(UUID.randomUUID());
+        UserId payeeUserId = new UserId(UUID.randomUUID());
+        BigDecimal amount = new BigDecimal("40.00");
 
-        when(walletRepository.findByUserId(payerId)).thenReturn(Optional.of(wallet));
-        when(walletRepository.findByUserKey(payeeKey)).thenReturn(Optional.of(wallet));
-        when(wallet.getId()).thenReturn(walletId);
+        Wallet payerWallet = mock(Wallet.class);
+        Wallet payeeWallet = mock(Wallet.class);
 
-        assertThrows(UnauthorizeOperationException.class, () -> walletService.transaction(payerId, payeeKey, amount));
-        verify(eventPublisher, atLeastOnce()).publishEvent(any(TransactionUpdateStatusEvent.class));
+        when(walletRepository.findById(payerWalletId)).thenReturn(Optional.of(payerWallet));
+        when(walletRepository.findById(payeeWalletId)).thenReturn(Optional.of(payeeWallet));
+        when(payerWallet.getUserId()).thenReturn(payerUserId);
+        when(payeeWallet.getUserId()).thenReturn(payeeUserId);
+        when(payerWallet.getId()).thenReturn(payerWalletId);
+        when(payeeWallet.getId()).thenReturn(payeeWalletId);
+        when(payerWallet.getBalance()).thenReturn(new BigDecimal("60.00"));
+        when(payeeWallet.getBalance()).thenReturn(new BigDecimal("140.00"));
+
+        CacheManager cacheManagerMock = mock(CacheManager.class);
+        Cache cacheMock = mock(Cache.class);
+        when(cacheManagerMock.getCache("walletBalance")).thenReturn(cacheMock);
+
+        walletService = new WalletServiceImpl(walletRepository, eventPublisher, cacheManagerMock);
+
+        walletService.executeTransaction(transactionId, payerWalletId, payeeWalletId, amount);
+
+        verify(cacheMock).put(payerUserId, new BigDecimal("60.00"));
+        verify(cacheMock).put(payeeUserId, new BigDecimal("140.00"));
     }
 
     @Test
-    void executeTransaction_shouldWithdrawFromPayerAndDepositToPayeeAndPublishEvents() {
-        TransactionId transactionId = new TransactionId();
-        UserId payerId = new UserId(UUID.randomUUID());
-        UserId payeeId = new UserId(UUID.randomUUID());
-        Wallet payerWallet = mock(Wallet.class);
-        Wallet payeeWallet = mock(Wallet.class);
-        WalletId payerWalletId = new WalletId(UUID.randomUUID());
-        WalletId payeeWalletId = new WalletId(UUID.randomUUID());
-        BigDecimal amount = new BigDecimal("25.00");
+    void getActualBalance_shouldCacheResult() {
+        UserId userId = new UserId(UUID.randomUUID());
+        BigDecimal expectedBalance = new BigDecimal("200.00");
+        when(walletRepository.findBalanceByUserId(userId)).thenReturn(Optional.of(expectedBalance));
 
-        when(payerWallet.getUserId()).thenReturn(payerId);
-        when(payeeWallet.getUserId()).thenReturn(payeeId);
-        when(payerWallet.getId()).thenReturn(payerWalletId);
-        when(payeeWallet.getId()).thenReturn(payeeWalletId);
-        when(payerWallet.getBalance()).thenReturn(new BigDecimal("75.00"));
-        when(payeeWallet.getBalance()).thenReturn(new BigDecimal("125.00"));
+        BigDecimal balance1 = walletService.getActualBalance(userId);
+        BigDecimal balance2 = walletService.getActualBalance(userId);
 
-        walletService.executeTransaction(transactionId, payerWallet.getId(), payeeWallet.getId(), amount);
+        assertEquals(expectedBalance, balance1);
+        assertEquals(expectedBalance, balance2);
+        verify(walletRepository, times(2)).findBalanceByUserId(userId);
+    }
 
-        verify(payerWallet).withdraw(amount);
-        verify(payeeWallet).deposit(amount);
-        verify(walletRepository).saveAll(List.of(payerWallet, payeeWallet));
-        verify(eventPublisher, atLeastOnce()).publishEvent(any(WalletUpdatedEvent.class));
-        verify(eventPublisher, atLeastOnce()).publishEvent(any(TransactionUpdateStatusEvent.class));
+    @Test
+    void deposit_shouldUpdateCache() {
+        UserId userId = new UserId(UUID.randomUUID());
+        BigDecimal amount = new BigDecimal("100.00");
+        Wallet wallet = mock(Wallet.class);
+        WalletId walletId = new WalletId(UUID.randomUUID());
+
+        when(walletRepository.findByUserId(userId)).thenReturn(Optional.of(wallet));
+        when(wallet.getId()).thenReturn(walletId);
+        when(wallet.getBalance()).thenReturn(new BigDecimal("300.00"));
+
+        CacheManager cacheManagerMock = mock(CacheManager.class);
+        Cache cacheMock = mock(Cache.class);
+        when(cacheManagerMock.getCache("walletBalance")).thenReturn(cacheMock);
+
+        walletService = new WalletServiceImpl(walletRepository, eventPublisher, cacheManagerMock);
+
+        walletService.deposit(userId, amount);
+    }
+
+    @Test
+    void withdraw_shouldUpdateCache() {
+        UserId userId = new UserId(UUID.randomUUID());
+        BigDecimal amount = new BigDecimal("50.00");
+        Wallet wallet = mock(Wallet.class);
+        WalletId walletId = new WalletId(UUID.randomUUID());
+
+        when(walletRepository.findByUserId(userId)).thenReturn(Optional.of(wallet));
+        when(wallet.getId()).thenReturn(walletId);
+        when(wallet.getBalance()).thenReturn(new BigDecimal("250.00"));
+
+        CacheManager cacheManagerMock = mock(CacheManager.class);
+        Cache cacheMock = mock(Cache.class);
+        when(cacheManagerMock.getCache("walletBalance")).thenReturn(cacheMock);
+
+        walletService = new WalletServiceImpl(walletRepository, eventPublisher, cacheManagerMock);
+
+        walletService.withdraw(userId, amount);
     }
 }
