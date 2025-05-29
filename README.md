@@ -167,7 +167,7 @@ Requires JWT and Idempotency-Key header
 Requires JWT and Idempotency-Key header
 ```
 {
-    "payeeKey": "12345678900",
+    "payeeKey": "16612010088",
     "amount": 200
 }
 ```
