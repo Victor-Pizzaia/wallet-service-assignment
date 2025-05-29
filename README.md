@@ -125,18 +125,18 @@ User:
 ```
 {
     "fullname": "John Doe",
-    "cpf": "12345678910"
+    "cpf": "12345678910",
     "email": "jhon.doe@teste.com",
-    "plainPassword": "test123",
+    "plainPassword": "test123"
 }
 ```
 User 2:
 ```
 {
     "fullname": "Jane Doe",
-    "cpf": "12345678900"
+    "cpf": "12345678900",
     "email": "jane.doe@teste.com",
-    "plainPassword": "456test",
+    "plainPassword": "456test"
 }
 ```
 ### Authentication (/api/v1/auth):
@@ -148,6 +148,7 @@ User 2:
 ```
 ### Balance (/api/v1/wallets/balance):
 Requires JWT token on header Authorization Bearer token (Returns on Auth Request)
+
 ### Deposit (/api/v1/wallets/deposit):
 Requires JWT and Idempotency-Key header
 ```
@@ -172,6 +173,7 @@ Requires JWT and Idempotency-Key header
 ```
 ### Statement (/api/v1/statement?page=0&size=10):
 Requires JWT
+This request has params to filter by start and end date (or just one of these) like: /api/v1/statement?startDate=28-05-2025&endDate=29-05-2025
 
 ---
 
