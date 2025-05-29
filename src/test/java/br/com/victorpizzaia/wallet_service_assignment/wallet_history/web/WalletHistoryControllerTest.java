@@ -49,9 +49,9 @@ class WalletHistoryControllerTest {
         List<WalletHistoryResponse> content = Collections.singletonList(response);
         Page<WalletHistoryResponse> page = new PageImpl<>(content, pageable, 1);
 
-        when(walletHistoryService.getWalletHistory(any(UserId.class), any(Pageable.class))).thenReturn(page);
+        when(walletHistoryService.getWalletHistory(any(UserId.class), any(String.class), any(String.class), any(Pageable.class))).thenReturn(page);
 
-        ResponseEntity<PageResponse<WalletHistoryResponse>> result = controller.getStatement(authentication, pageable);
+        ResponseEntity<PageResponse<WalletHistoryResponse>> result = controller.getStatement(authentication, "28-05-2025", "28-05-2025", pageable);
 
         assertThat(result).isNotNull();
         assertThat(result.getStatusCode().is2xxSuccessful()).isTrue();
@@ -59,8 +59,10 @@ class WalletHistoryControllerTest {
         assertThat(result.getBody().content()).hasSize(1);
 
         ArgumentCaptor<UserId> userIdCaptor = ArgumentCaptor.forClass(UserId.class);
+        ArgumentCaptor<String> startDateCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> endDateCaptor = ArgumentCaptor.forClass(String.class);
         ArgumentCaptor<Pageable> pageableCaptor = ArgumentCaptor.forClass(Pageable.class);
-        verify(walletHistoryService).getWalletHistory(userIdCaptor.capture(), pageableCaptor.capture());
+        verify(walletHistoryService).getWalletHistory(userIdCaptor.capture(), startDateCaptor.capture(), endDateCaptor.capture(), pageableCaptor.capture());
         assertThat(userIdCaptor.getValue().id().toString()).isEqualTo(userId);
         assertThat(pageableCaptor.getValue()).isEqualTo(pageable);
     }

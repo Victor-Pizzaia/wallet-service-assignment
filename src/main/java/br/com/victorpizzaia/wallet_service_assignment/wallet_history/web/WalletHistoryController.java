@@ -8,6 +8,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
@@ -27,10 +28,14 @@ public class WalletHistoryController {
     }
 
     @GetMapping
-    public ResponseEntity<PageResponse<WalletHistoryResponse>> getStatement(Authentication authentication, @PageableDefault(size = 10) Pageable pageable) {
+    public ResponseEntity<PageResponse<WalletHistoryResponse>> getStatement(
+        Authentication authentication,
+        @RequestParam(required = false) String startDate,
+        @RequestParam(required = false) String endDate,
+        @PageableDefault(size = 10) Pageable pageable) {
         String userId = authentication.getName();
 
-        Page<WalletHistoryResponse> walletHistoryResponse = walletHistoryService.getWalletHistory(new UserId(userId), pageable);
+        Page<WalletHistoryResponse> walletHistoryResponse = walletHistoryService.getWalletHistory(new UserId(userId), startDate, endDate, pageable);
         return ResponseEntity.ok(PageResponse.from(walletHistoryResponse));
     }
 }

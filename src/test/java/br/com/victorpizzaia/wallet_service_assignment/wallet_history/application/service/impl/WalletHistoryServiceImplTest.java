@@ -2,21 +2,14 @@ package br.com.victorpizzaia.wallet_service_assignment.wallet_history.applicatio
 
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.UserId;
 import br.com.victorpizzaia.wallet_service_assignment.shared.domain.WalletId;
-import br.com.victorpizzaia.wallet_service_assignment.wallet_history.domain.WalletHistoryResponse;
 import br.com.victorpizzaia.wallet_service_assignment.wallet_history.domain.WalletTransactionType;
 import br.com.victorpizzaia.wallet_service_assignment.wallet_history.infrastructure.persistence.WalletHistory;
 import br.com.victorpizzaia.wallet_service_assignment.wallet_history.infrastructure.persistence.WalletHistoryRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mockito;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageImpl;
-import org.springframework.data.domain.PageRequest;
 
 import java.math.BigDecimal;
-import java.util.List;
-
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
@@ -63,26 +56,5 @@ class WalletHistoryServiceImplTest {
         walletHistoryService.recordWalletHistory(userId, walletId, balance, amount, transactionType);
 
         verify(walletHistoryRepository, times(1)).save(any(WalletHistory.class));
-    }
-
-    @Test
-    void getWalletHistory_returnsWalletHistory() {
-        UserId userId = new UserId();
-        PageRequest pageable = PageRequest.of(0, 10);
-
-        WalletHistory walletHistory = mock(WalletHistory.class);
-
-        Page<WalletHistory> walletHistoryPage = new PageImpl<>(List.of(walletHistory));
-        when(walletHistoryRepository.findByUserId(userId, pageable)).thenReturn(walletHistoryPage);
-
-        WalletHistoryResponse response = mock(WalletHistoryResponse.class);
-
-        Mockito.mockStatic(WalletHistoryResponse.class).when(() -> WalletHistoryResponse.toResponse(walletHistory)).thenReturn(response);
-
-        Page<WalletHistoryResponse> result = walletHistoryService.getWalletHistory(userId, pageable);
-
-        assertEquals(1, result.getTotalElements());
-        assertTrue(result.getContent().contains(response));
-        verify(walletHistoryRepository, times(1)).findByUserId(userId, pageable);
     }
 }

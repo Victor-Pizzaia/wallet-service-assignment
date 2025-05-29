@@ -11,5 +11,5 @@ import br.com.victorpizzaia.wallet_service_assignment.wallet_history.domain.Wall
 
 public interface WalletHistoryService {
     void recordWalletHistory(UserId userId, WalletId walletId, BigDecimal balance, BigDecimal amount, String transactionType);
-    Page<WalletHistoryResponse> getWalletHistory(UserId userId, Pageable pageable);
+    Page<WalletHistoryResponse> getWalletHistory(UserId userId, String startDate, String endDate, Pageable pageable);
 }
