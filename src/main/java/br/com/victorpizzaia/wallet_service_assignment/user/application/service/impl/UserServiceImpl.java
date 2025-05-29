@@ -34,10 +34,10 @@ public class UserServiceImpl implements UserService {
     @Transactional
     public CreateUserResponse createUser(String fullname, String cpf, String email, String plainPassword) {
         log.info("Starting process to create a new user: {}", cpf);
-        Optional<User> searchedUser = userRepository.findByCpf(cpf);
-        if (searchedUser.isPresent()) {
-            throw new UserAlreadyExistException("User with CPF " + cpf + " already exists", 400);
-        }
+        cpf = cpf.replaceAll("\\D", "");
+
+        validateUserUniqueInformations(cpf, email);
+
         log.info("Hashing password");
         String hashedPassword = passwordEncoderService.hash(plainPassword);
 
@@ -54,5 +54,14 @@ public class UserServiceImpl implements UserService {
         log.info("Sending event to create a wallet");
         eventPublisher.publishEvent(new UserCreatedEvent(newUser.getId()));
         return new CreateUserResponse(newUser.getId(), newUser.getFullname());
+    }
+
+    private void validateUserUniqueInformations(String cpf, String email) {
+        if (userRepository.findByCpf(cpf).isPresent()) {
+            throw new UserAlreadyExistException("User with CPF " + cpf + " already exists", 409);
+        }
+        if (userRepository.findByEmail(email).isPresent()) {
+            throw new UserAlreadyExistException("User with email " + email + " already exists", 409);
+        }
     }
 }

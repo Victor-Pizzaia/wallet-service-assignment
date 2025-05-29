@@ -16,4 +16,6 @@ public interface UserRepository extends JpaRepository<User, UserId> {
 
     @Query("SELECT u.id.id AS userId, u.passwordHash AS hashedPassword FROM User u WHERE u.email = :identifier OR u.cpf = :identifier")
     Optional<UserCredentialsView> findPasswordHashByEmailOrCpf(@Param("identifier") String identifier);
+
+    Optional<User> findByEmail(String email);
 }

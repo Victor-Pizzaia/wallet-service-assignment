@@ -125,7 +125,7 @@ User:
 ```
 {
     "fullname": "John Doe",
-    "cpf": "12345678910",
+    "cpf": "01811504094",
     "email": "jhon.doe@teste.com",
     "plainPassword": "test123"
 }
@@ -134,7 +134,7 @@ User 2:
 ```
 {
     "fullname": "Jane Doe",
-    "cpf": "12345678900",
+    "cpf": "166.120.100-88",
     "email": "jane.doe@teste.com",
     "plainPassword": "456test"
 }
@@ -142,7 +142,7 @@ User 2:
 ### Authentication (/api/v1/auth):
 ```
 {
-  "identifier": "12345678910", // Cpf or Email
+  "identifier": "01811504094", // Cpf or Email
   "password": "test123"
 }
 ```

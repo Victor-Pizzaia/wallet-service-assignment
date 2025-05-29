@@ -14,6 +14,6 @@ public class UserHandler {
     @ExceptionHandler(UserAlreadyExistException.class)
     public ResponseEntity<ErrorResponse> handleUserAlreadyExistException(UserAlreadyExistException exception) {
         ErrorResponse errorResponseDTO = new ErrorResponse(exception.getMessage(), exception.getCode());
-        return new ResponseEntity<>(errorResponseDTO, HttpStatus.BAD_REQUEST);
+        return new ResponseEntity<>(errorResponseDTO, HttpStatus.CONFLICT);
     }
 }

@@ -12,13 +12,13 @@ class UserHandlerTest {
     @Test
     void handleUserAlreadyExistException_shouldReturnBadRequestAndErrorResponse() {
         String message = "User already exists";
-        int code = 400;
+        int code = 409;
         UserAlreadyExistException exception = new UserAlreadyExistException(message, code);
         UserHandler handler = new UserHandler();
 
         ResponseEntity<ErrorResponse> response = handler.handleUserAlreadyExistException(exception);
 
-        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals(message, response.getBody().message());
         assertEquals(code, response.getBody().code());

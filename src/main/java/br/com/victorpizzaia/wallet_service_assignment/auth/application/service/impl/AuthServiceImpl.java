@@ -30,7 +30,7 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest loginRequest) {
         log.info("Attempting to login user with identifier: {}", loginRequest.identifier());
         UserCredentialsView user = userQueryService.findByEmailOrCpf(loginRequest.identifier())
-            .orElseThrow(() -> new UserNotFound("User not found"));
+            .orElseThrow(() -> new UserNotFound("User %s not found".formatted(loginRequest.identifier())));
 
         if (!passwordEncoderService.matches(loginRequest.password(), user.getHashedPassword())) {
             throw new UserPasswordWrongException("Wrong password");
